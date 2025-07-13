@@ -15,6 +15,8 @@ from llama_index.core.tools.types import BaseTool
 from llama_index.core.workflow import (
     Context,
     Event,
+    HumanResponseEvent,
+    InputRequiredEvent,
     StartEvent,
     StopEvent,
     Workflow,
@@ -53,11 +55,13 @@ class ReActAgent(Workflow):
         memory_key: str,
         chat_store: BaseChatStore,
         tools: list[BaseTool] | None = None,
+        tools_need_confirm: list[str] | None = None,
         extra_context: str | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(*args, **kwargs)
         self.tools = tools or []
+        self.tools_need_confirm = tools_need_confirm or []
         self.llm = llm
         self.chat_store = chat_store
         self.memory_key = memory_key
@@ -191,6 +195,17 @@ class ReActAgent(Workflow):
             )
         else:
             try:
+                if tool_call.tool_name in self.tools_need_confirm:
+                        ctx.write_event_to_stream(
+                            InputRequiredEvent(
+                                prefix=f"{tool_call.tool_name}({tool_call.tool_kwargs}), ok?",
+                            )
+                        )
+                        res = await ctx.wait_for_event(HumanResponseEvent)
+                        print('==', res.response, flush=True)
+                        if res.response != 'y':
+                            raise Exception('Fail to get confirmation.')
+
                 tool_output = tool(**tool_call.tool_kwargs)
                 sources.append(tool_output)
                 ctx.write_event_to_stream(ToolCallResultMessage(output=tool_output.content))
