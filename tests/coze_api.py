@@ -1,27 +1,17 @@
-"""
-Simple unittest module for testing the coze_api module functionality.
-
-This test suite covers:
-- Basic streaming chat functionality
-- Environment variable loading
-- Client initialization  
-- Different event types (reasoning content vs regular content vs completion)
-
-The tests use mocking to simulate the Coze API responses without making actual API calls.
-"""
-
-import unittest
-from unittest.mock import MagicMock, patch
 import asyncio
 import os
-from cozepy import ChatEventType
+import unittest
 
-
-from agent.coze_api import achat_stream, acoze, COZE_API_TOKEN, BOT_ID
+from agent import BOT_ID, COZE_API_TOKEN, acoze_client
+from agent.coze_api import achat_stream
 
 
 class TestCozeAPI(unittest.TestCase):
     """Test cases for the coze_api module."""
+
+    def setUp(self):
+        self.acoze = acoze_client
+        return super().setUp()
 
     def test_environment_variables(self):
         """Test that environment variables are loaded correctly."""
@@ -30,17 +20,18 @@ class TestCozeAPI(unittest.TestCase):
         self.assertIsNotNone(BOT_ID or os.getenv("BOT_ID"))
 
     def test_acoze_client_initialization(self):
-        """Test that the Coze client is properly initialized."""
-        self.assertIsNotNone(acoze)
+        """Test that the Coze client can be properly initialized."""
+        self.assertIsNotNone(self.acoze)
         # Check that it has the expected methods
-        self.assertTrue(hasattr(acoze, 'chat'))
-        self.assertTrue(hasattr(acoze.chat, 'stream'))
+        self.assertTrue(hasattr(self.acoze, 'chat'))
+        self.assertTrue(hasattr(self.acoze.chat, 'stream'))
 
     def test_achat_stream_basic_flow(self):
         """Test the basic flow of achat_stream function."""
         async def run_test():
             results = []
             async for result in achat_stream(
+                acoze=self.acoze,
                 msg='hi, 1+1=?, only output the result number',
                 bot_id=BOT_ID,
             ):

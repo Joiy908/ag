@@ -1,22 +1,10 @@
-import logging
-import os
-
-from cozepy import COZE_CN_BASE_URL, AsyncCoze, AsyncTokenAuth, ChatEventType, Message
-from dotenv import load_dotenv
-
-logger = logging.getLogger(__name__)
-
-load_dotenv()  # take environment variables from .env.
+"""
+Coze API streaming chat functionality.
+"""
+from cozepy import ChatEventType, Message
 
 
-COZE_API_TOKEN = os.getenv("COZE_API_TOKEN")
-BOT_ID = os.getenv("BOT_ID")
-
-# Initialize Coze client
-acoze = AsyncCoze(auth=AsyncTokenAuth(token=COZE_API_TOKEN), base_url=COZE_CN_BASE_URL)
-
-
-async def achat_stream(msg: str, bot_id: str, user_id: str = "default user", conversation_id: str | None = None):
+async def achat_stream(acoze, msg: str, bot_id: str, user_id: str = "default user", conversation_id: str | None = None):
     """
     Initiates chat. The response method is streaming.
     if there's not need to distinguish the context of the conversation(just a question and answer),
