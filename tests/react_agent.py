@@ -7,6 +7,10 @@ from llama_index.core.workflow import HumanResponseEvent, InputRequiredEvent
 
 from agent.my_llm import CozeLLM
 from agent.react_agent import ReActAgent
+from llama_index.tools.mcp import (
+    aget_tools_from_mcp_url,
+    get_tools_from_mcp_url,
+) 
 
 
 class TestReActAgent(unittest.TestCase):
@@ -34,7 +38,7 @@ class TestReActAgent(unittest.TestCase):
         self.agent_confirm_tool = ReActAgent(
             llm=self.llm,
             chat_store=self.chat_store,
-            memory_key='bob2',
+            memory_key='confirm_tool_test',
             tools=[add_tool],
             tools_need_confirm=['add_tool']
         )
@@ -135,6 +139,62 @@ class TestReActAgent(unittest.TestCase):
             loop.close()
         # self.chat_store.persist(persist_path="chat_store.json")
 
+    def test_mcp_tool(self):
+        """Test mcp tools"""
+        from agent import MCP_SERVERS
+        tools = []
+        for url in MCP_SERVERS:
+            tools.append(*get_tools_from_mcp_url(url))
+        agent = ReActAgent(
+            llm=self.llm,
+            chat_store=self.chat_store,
+            memory_key='confirm_tool_test',
+            tools=tools,
+            # tools_need_confirm=['add_tool']
+        )
+        async def run_test():
+            handler = agent.run(input="123 + 1 = ?")
+            async for ev in handler.stream_events():
+                # print(repr(ev))
+                match ev:
+                #     case InputEvent():
+                #         # print(Colors.USER_PROMPT, end="", flush=True)
+                #         print(ev.input, end="", flush=True)
+                #         # print(Colors.RESET, end="", flush=True)
+                #         print()
+                #     case StreamEvent():
+                #         # print(Colors.RESPONSE, end="", flush=True)
+                #         print(ev.delta, end="", flush=True)
+                #         # print(Colors.RESET, end="", flush=True)
+                #     case ToolCallResultMessage():
+                #         # print(Colors.BLUE, end="", flush=True)
+                #         print()
+                #         print(ev.output, end="", flush=True)
+                #         print()
+                #         # print(Colors.RESET, end="", flush=True)
+                #     case StopSignal():
+                #         print("\n === end ===")
+                    case InputRequiredEvent():
+                        # response = input(ev.prefix)
+                        # send our response back
+                        handler.ctx.send_event(
+                            HumanResponseEvent(
+                                response='n'
+                            )
+                        )
+                    case _:
+                        continue
+
+            await handler
+
+        # Run the async test
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        try:
+            result = loop.run_until_complete(run_test())
+        finally:
+            loop.close()
+        self.chat_store.persist(persist_path="chat_store.json")
 
 if __name__ == '__main__':
     unittest.main()
