@@ -26,3 +26,5 @@ select = [         # 选择的规则
     "I",
     "SIM"
 ]
+[project.scripts]
+ag = "agent.cli:main"

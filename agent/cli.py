@@ -70,7 +70,7 @@ def read_keyboard_input():
     if os == 'Windows':
         return win_read_keyboard_input_multiline()
     elif os == 'Linux':
-        raise linux_read_keyboard_input_multiline()
+        return linux_read_keyboard_input_multiline()
     else:
         raise 'Unsuppoted OS, please implment this method yourself'
 
@@ -87,7 +87,7 @@ def read_stdin():
     return sys.stdin.read()
 
 
-async def main(read_from_pipe):
+async def amain(read_from_pipe: bool):
     tools = []
     for url in MCP_SERVERS:
         tools.append(*await aget_tools_from_mcp_url(url))
@@ -144,8 +144,8 @@ async def main(read_from_pipe):
                                 response=res
                             )
                         )
-                    # case StopSignal():
-                        # print("\n === done ===")
+                    case StopSignal():
+                        print()
                     case _:
                         continue
 
@@ -160,12 +160,14 @@ async def main(read_from_pipe):
             print("\n[System] Program interrupted by user, exiting.")
             break
 
-
-if __name__ == "__main__":
+def main():
     import asyncio
 
     parser = argparse.ArgumentParser(description="LLM CLI Tool, double return to commit input, -p to read from pipe")
     parser.add_argument('-p', '--pipe', action='store_true', help="Read input from stdin (pipe)")
     args = parser.parse_args()
 
-    asyncio.run(main(args.pipe))
+    asyncio.run(amain(args.pipe))
+
+if __name__ == "__main__":
+    main()

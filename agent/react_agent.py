@@ -59,7 +59,7 @@ class ReActAgent(Workflow):
         extra_context: str | None = None,
         **kwargs: Any,
     ) -> None:
-        super().__init__(*args, **kwargs)
+        super().__init__(timeout=300, *args, **kwargs)
         self.tools = tools or []
         self.tools_need_confirm = tools_need_confirm or []
         self.llm = llm
