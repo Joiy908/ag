@@ -54,13 +54,23 @@ def win_read_keyboard_input_multiline():
             buffer += ch
             print(ch, end="", flush=True)
 
+def linux_read_keyboard_input_multiline() -> str:
+    buffer = ''
+    with open('/dev/tty') as tty:
+        while True:
+            line = tty.readline()
+            if line == '\n':
+                break
+            buffer += line
+    return buffer
+
 
 def read_keyboard_input():
     os = platform.system()
     if os == 'Windows':
         return win_read_keyboard_input_multiline()
     elif os == 'Linux':
-        raise 'todo: impl Linux read from tty'
+        raise linux_read_keyboard_input_multiline()
     else:
         raise 'Unsuppoted OS, please implment this method yourself'
 
@@ -74,10 +84,7 @@ def format_prompt(current_input: str, stdin_data: str = None) -> str:
 
 
 def read_stdin():
-    buffer = ''
-    for line in sys.stdin:
-        buffer += line
-    return buffer
+    return sys.stdin.read()
 
 
 async def main(read_from_pipe):
