@@ -137,7 +137,7 @@ class TestReActAgent(unittest.TestCase):
             result = loop.run_until_complete(run_test())
         finally:
             loop.close()
-        # self.chat_store.persist(persist_path="chat_store.json")
+        self.chat_store.persist(persist_path="chat_store.json")
 
     def test_mcp_tool(self):
         """Test mcp tools"""

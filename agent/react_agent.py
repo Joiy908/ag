@@ -109,7 +109,7 @@ class ReActAgent(Workflow):
             llm_input_chatlist = [llm_input_chatlist[-1]]
         ctx.write_event_to_stream(InputEvent(input=llm_input_chatlist))
         await memory.aput_messages(llm_input_chatlist)
-        print('llm_input', llm_input_chatlist)
+        # print('llm_input', llm_input_chatlist)
         return InputEvent(input=llm_input_chatlist)
 
     @step
@@ -198,18 +198,16 @@ class ReActAgent(Workflow):
                 if tool_call.tool_name in self.tools_need_confirm:
                         ctx.write_event_to_stream(
                             InputRequiredEvent(
-                                prefix=f"{tool_call.tool_name}({tool_call.tool_kwargs}), ok?",
+                                prefix=f"excecute {tool_call.tool_name}({tool_call.tool_kwargs}), yes(y)/no(n)?",
                             )
                         )
                         res = await ctx.wait_for_event(HumanResponseEvent)
-                        print('==', res.response, flush=True)
+                        # print('==', res.response, flush=True)
                         if res.response != 'y':
                             raise Exception('Fail to get confirmation.')
 
                 tool_output = tool(**tool_call.tool_kwargs)
                 sources.append(tool_output)
-                ctx.write_event_to_stream(ToolCallResultMessage(output=tool_output.content))
-                await memory.aput(ChatMessage(role="tool", content=tool_output.content))
                 current_reasoning.append(ObservationReasoningStep(observation=tool_output.content))
 
             except Exception as e:
@@ -218,6 +216,8 @@ class ReActAgent(Workflow):
                     ObservationReasoningStep(observation=f"Error calling tool {tool.metadata.get_name()}: {e}")
                 )
 
+        ctx.write_event_to_stream(ToolCallResultMessage(output=current_reasoning[-1].get_content()))
+        await memory.aput(ChatMessage(role="tool", content=current_reasoning[-1].get_content()))
         # save new state in context
         await ctx.store.set("sources", sources)
         await ctx.store.set("current_reasoning", current_reasoning)
